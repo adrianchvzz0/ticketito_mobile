@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "579673954239",
+    "firebase_url": "https://api-ticket-78439-default-rtdb.firebaseio.com",
+    "project_id": "api-ticket-78439",
+    "storage_bucket": "api-ticket-78439.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:579673954239:android:2e65fd0f745b6ae04af30a",
+        "android_client_info": {
+          "package_name": "com.example.ticketito_mobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "579673954239-vilkjc3msdj68m5bv5bcpgltdq73tv06.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDv61D3hEO7ncuE9_Cbfl3R0ANTivUI63U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "579673954239-vilkjc3msdj68m5bv5bcpgltdq73tv06.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "579673954239-d42nthspe101ftn1trjrnc8u1fhb0mp6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.ticketitoMobile"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

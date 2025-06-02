@@ -53,23 +53,29 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _loginWithGoogle() async {
-    final user = await _authService.loginWithEmail(
-      emailController.text.trim(),
-      passwordController.text.trim(),
-    );
+    try {
+      final user = await _authService.signInWithGoogle();
 
-    if (!mounted) return;
-
-    if (user != null) {
-      // Login con Google exitoso - navegar a home screen
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/home',
-        (route) => false,
-      );
-    } else {
+      if (user != null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Inicio de sesión exitosa con Google")),
+        );
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/home',
+          (route) => false,
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error al iniciar sesión con Google")),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Error al iniciar sesión con Google")),
+        SnackBar(content: Text("Error: ${e.toString()}")),
       );
     }
   }

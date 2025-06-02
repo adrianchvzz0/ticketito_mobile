@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:share_plus/share_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import '../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,6 +15,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController searchController = TextEditingController();
   int selectedCategoryIndex = 0;
+  final ApiService _apiService = ApiService();
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _filteredEvents = [];
+  List<String> _favoriteEvents = [];
 
   // Lista de categorías
   final List<String> categories = [
@@ -19,30 +28,71 @@ class _HomeScreenState extends State<HomeScreen> {
     'FAMILIARES'
   ];
 
-  // Mock data - aquí conectarás con tu API
-  final List<Map<String, dynamic>> featuredEvents = [
-    {
-      'id': '1',
-      'title': 'Peso Pluma - Doble P - Tour 2025',
-      'location': 'San Pedro Garza García, Nuevo León',
-      'image': 'assets/images/peso_pluma_event.jpg', // Placeholder
-    }
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+    _loadFavorites();
+  }
 
-  final List<Map<String, dynamic>> events = [
-    {
-      'id': '1',
-      'title': 'Los Tigres del Norte -...',
-      'location': 'San Pedro Garza García, Nuevo León',
-      'image': 'assets/images/tigres_norte.jpg', // Placeholder
-    },
-    {
-      'id': '2',
-      'title': 'Peso Pluma - Doble P-...',
-      'location': 'San Pedro Garza García, Nuevo León',
-      'image': 'assets/images/peso_pluma_2.jpg', // Placeholder
+  Future<void> _loadEvents() async {
+    try {
+      setState(() => _isLoading = true);
+      final events = await _apiService.getEvents(
+        category: selectedCategoryIndex == 0 ? null : categories[selectedCategoryIndex],
+      );
+      setState(() {
+        _filteredEvents = events;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error al cargar eventos: $e');
+      setState(() => _isLoading = false);
     }
-  ];
+  }
+
+  Future<void> _loadFavorites() async {
+    try {
+      // Aquí implementarías la llamada a tu API para obtener favoritos
+      // Por ahora, mantenemos la lista vacía
+      setState(() {
+        _favoriteEvents = [];
+      });
+    } catch (e) {
+      print('Error al cargar favoritos: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite(String eventId) async {
+    try {
+      final isFavorite = !_favoriteEvents.contains(eventId);
+      await _apiService.toggleFavorite(eventId, isFavorite);
+      setState(() {
+        if (isFavorite) {
+          _favoriteEvents.add(eventId);
+        } else {
+          _favoriteEvents.remove(eventId);
+        }
+      });
+    } catch (e) {
+      print('Error al actualizar favoritos: $e');
+    }
+  }
+
+  Future<void> _shareEvent(Map<String, dynamic> event) async {
+    try {
+      await _apiService.shareEvent(event['id']);
+      final shareText = '¡No te pierdas ${event['title']}!\n'
+          'Lugar: ${event['location']}\n'
+          'Precio: \$${event['price']}\n'
+          'Fecha: ${event['date']}\n\n'
+          'Descúbrelo en Ticketito: https://ticketito.com/event/${event['id']}';
+
+      await Share.share(shareText);
+    } catch (e) {
+      print('Error al compartir evento: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -190,6 +240,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNewEventsSection() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF00FF88)),
+      );
+    }
+
+    if (_filteredEvents.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay eventos disponibles',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontFamily: 'Poppins',
+          ),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -223,17 +292,30 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Stack(
             children: [
-              // Placeholder for event image
-              Container(
-                decoration: BoxDecoration(
+              // Event image
+              CachedNetworkImage(
+                imageUrl: _filteredEvents[0]['image'],
+                height: 200,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
                   color: Colors.grey[700],
-                  borderRadius: BorderRadius.circular(15),
+                  child: const Center(
+                    child: Icon(
+                      Icons.image,
+                      color: Colors.grey,
+                      size: 50,
+                    ),
+                  ),
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.image,
-                    color: Colors.grey,
-                    size: 50,
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey[700],
+                  child: const Center(
+                    child: Icon(
+                      Icons.error,
+                      color: Colors.red,
+                      size: 50,
+                    ),
                   ),
                 ),
               ),
@@ -263,9 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        featuredEvents.isNotEmpty
-                            ? featuredEvents[0]['title']
-                            : 'Evento Destacado',
+                        _filteredEvents[0]['title'],
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -275,9 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        featuredEvents.isNotEmpty
-                            ? featuredEvents[0]['location']
-                            : 'Ubicación del evento',
+                        _filteredEvents[0]['location'],
                         style: const TextStyle(
                           color: Color(0xFF00FF88),
                           fontSize: 14,
@@ -296,31 +374,39 @@ class _HomeScreenState extends State<HomeScreen> {
                 right: 15,
                 child: Column(
                   children: [
-                    Container(
-                      width: 35,
-                      height: 35,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.favorite_border,
-                        color: Colors.white,
-                        size: 18,
+                    GestureDetector(
+                      onTap: () => _toggleFavorite(_filteredEvents[0]['id']),
+                      child: Container(
+                        width: 35,
+                        height: 35,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          _favoriteEvents.contains(_filteredEvents[0]['id'])
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Container(
-                      width: 35,
-                      height: 35,
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.share_outlined,
-                        color: Colors.white,
-                        size: 18,
+                    GestureDetector(
+                      onTap: () => _shareEvent(_filteredEvents[0]),
+                      child: Container(
+                        width: 35,
+                        height: 35,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.share_outlined,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ),
                     ),
                   ],
@@ -399,63 +485,128 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildEventsList() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF00FF88)),
+      );
+    }
+
+    if (_filteredEvents.isEmpty) {
+      return const Center(
+        child: Text(
+          'No hay eventos disponibles',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontFamily: 'Poppins',
+          ),
+        ),
+      );
+    }
+
     return Column(
-      children: events.map((event) => _buildEventCard(event)).toList(),
+      children: _filteredEvents.map((event) => _buildEventCard(event)).toList(),
     );
   }
 
   Widget _buildEventCard(Map<String, dynamic> event) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      child: Row(
+    return Slidable(
+      endActionPane: ActionPane(
+        motion: const ScrollMotion(),
         children: [
-          // Event Image
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: Colors.grey[700],
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.music_note,
-                color: Colors.grey,
-                size: 30,
-              ),
-            ),
+          SlidableAction(
+            onPressed: (_) => _toggleFavorite(event['id']),
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            icon: _favoriteEvents.contains(event['id'])
+                ? Icons.favorite
+                : Icons.favorite_border,
+            label: _favoriteEvents.contains(event['id'])
+                ? 'Quitar favorito'
+                : 'Agregar favorito',
           ),
-
-          const SizedBox(width: 15),
-
-          // Event Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event['title'],
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  event['location'],
-                  style: const TextStyle(
-                    color: Color(0xFF00FF88),
-                    fontSize: 14,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
+          SlidableAction(
+            onPressed: (_) => _shareEvent(event),
+            backgroundColor: const Color(0xFF00FF88),
+            foregroundColor: Colors.white,
+            icon: Icons.share,
+            label: 'Compartir',
           ),
         ],
+      ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 15),
+        child: Row(
+          children: [
+            // Event Image
+            CachedNetworkImage(
+              imageUrl: event['image'],
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.grey[700],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.music_note,
+                    color: Colors.grey,
+                    size: 30,
+                  ),
+                ),
+              ),
+              errorWidget: (context, url, error) => Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.grey[700],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.error,
+                    color: Colors.red,
+                    size: 30,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(width: 15),
+
+            // Event Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event['title'],
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    event['location'],
+                    style: const TextStyle(
+                      color: Color(0xFF00FF88),
+                      fontSize: 14,
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

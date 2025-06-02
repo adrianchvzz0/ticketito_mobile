@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "579673954239-keoedmbgjue3n5c2o7plgc98m1qkq3js.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ticketito_mobile",
+            "certificate_hash": "12418f78277f6f96de228d105fbeaf0facddf960"
+          }
+        },
+        {
           "client_id": "579673954239-vilkjc3msdj68m5bv5bcpgltdq73tv06.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'TU_URL_DE_API';
+  static const String baseUrl = 'https://backend-00.netlify.app/api';
   static const String apiKey = 'TU_API_KEY';
 
   Future<List<Map<String, dynamic>>> getEvents({String? category}) async {

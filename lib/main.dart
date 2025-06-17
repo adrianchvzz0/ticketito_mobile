@@ -6,6 +6,8 @@ import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'screens/event_screen.dart';
+import 'screens/historial_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +46,12 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
+        '/historial': (context) => const HistorialScreen(),
+        '/event': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments
+              as Map<String, dynamic>;
+          return EventScreen(eventId: args['id']);
+        },
       },
     );
   }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import '../services/api_service.dart';
+import '../api/api_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/ticketito_drawer.dart';
 import './historial_screen.dart';
